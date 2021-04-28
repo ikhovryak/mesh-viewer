@@ -38,6 +38,11 @@ namespace agl {
       // face indices in this model
       unsigned int* indices() const;
 
+      int numVert, numPol;
+      float minX, minY, minZ, maxX, maxY, maxZ;
+      float* total_normals;
+      float* total_positions;
+      unsigned int* total_indices;
    };
 }
 

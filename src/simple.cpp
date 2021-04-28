@@ -11,6 +11,14 @@
 using namespace std;
 using namespace glm;
 
+float x_old, y_old, z_old;
+float x = 0, y = 0, z = 3;
+float old_mouse_x = 0, old_mouse_y = 0;
+float change_mouse_x = 0, change_mouse_y = 0;
+bool isLeftDown, isShiftDown;
+float azimuth = 0, elevation = 0;
+float dist = 3;
+
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -32,6 +40,7 @@ static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 }
 
+// how do we get azimuth and elevation?
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
    double xpos, ypos;
@@ -42,17 +51,52 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
    int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
    if (state == GLFW_PRESS)
    {
+       isLeftDown = true;
        int keyPress = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
-       if (keyPress == GLFW_PRESS) {}
+       if (keyPress == GLFW_PRESS) 
+       {
+           isShiftDown = true;
+       }
+       else if (keyPress == GLFW_RELEASE){
+           isShiftDown = false;
+       }
+
    }
    else if (state == GLFW_RELEASE)
    {
+       isLeftDown = false;
+       isShiftDown = false;
    }
 }
 
+// what exactly should be done here (we think it might be redundant?)
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-   // TODO: CAmera controls
+    // change az and elev here, distance too
+    change_mouse_x = xpos - old_mouse_x;
+    change_mouse_y = ypos - old_mouse_y;
+    old_mouse_x = xpos;
+    old_mouse_y = ypos;
+
+    if (isShiftDown) {
+        if (change_mouse_y > 0) {
+            dist += sqrt(pow(change_mouse_x, 2) + pow(change_mouse_y, 2)) / 100;
+        }
+        else {
+            dist -= sqrt(pow(change_mouse_x, 2) + pow(change_mouse_y, 2)) / 100;
+        }
+        x = dist * sin(azimuth) * cos(elevation);
+        y = dist * sin(elevation);
+        z = dist * cos(azimuth) * cos(elevation);
+    }
+    else if (isLeftDown) {
+        azimuth += change_mouse_x / 100;
+        elevation += change_mouse_y / 100;
+        
+        x = dist * sin(azimuth) * cos(elevation);
+        y = dist * sin(elevation);
+        z = dist * cos(azimuth) * cos(elevation);
+    }
 }
 
 static void PrintShaderErrors(GLuint id, const std::string label)
@@ -133,22 +177,41 @@ int main(int argc, char** argv)
    {
       1.0, -1.0, 0.5,
      -1.0, -1.0, 0.5,
-      0.0, 1.0,  0.5
+      0.0, 1.0,  0.5,
+
+      -1.0, -1.0, 0.5,
+      0.0, -1.0, -0.5,
+      0.0, 1.0, 0.5,
+
+      0.0, -1.0,-0.5, 
+      1.0, -1.0, 0.5, 
+      0.0, 1.0, 0.5
    };
 
    const float normals[] =
    {
       0.0f, 0.0f, 1.0f,
       0.0f, 0.0f, 1.0f,
-      0.0f, 0.0f, 1.0f
+      0.0f, 0.0f, 1.0f,
+
+      2.0f, -1.0f, 2.0f,
+      2.0f, -1.0f, 2.0f,
+      2.0f, -1.0f, 2.0f,
+
+      -2.0f, -1.0f, 2.0f,
+      -2.0f, -1.0f, 2.0f,
+      -2.0f, -1.0f, 2.0f,
+
    };
 
    const unsigned int indices[] =
    {
-      0, 1, 2
+      0, 1, 2,
+      3, 4, 5,
+      6, 7, 8
    };
 
-   int numTriangles = 1;
+   int numTriangles = 3;
 
    GLuint vboPosId;
    glGenBuffers(1, &vboPosId);
@@ -215,10 +278,46 @@ int main(int argc, char** argv)
 
    glUseProgram(shaderId);
 
+   GLuint matrixParam = glGetUniformLocation(shaderId, "mvp");
+   glm::mat4 transform(1.0); // initialize to identity
+   glm::mat4 projection = glm::perspective(glm::radians(60.0f), 1.0f, 0.1f, 100.0f);
+   //glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -2.0f, 2.0f);
+   glm::mat4 camera = glm::lookAt(glm::vec3(0, 0, 3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+
    // Loop until the user closes the window 
    while (!glfwWindowShouldClose(window))
    {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the buffers
+
+      
+      
+      
+      // change the distance
+      /*if (isShiftDown) {
+
+          if (change_mouse_y > 0) {
+              dist += sqrt(pow(change_mouse_x, 2) + pow(change_mouse_y, 2)) / 100;
+          }
+          else {
+              dist -= sqrt(pow(change_mouse_x, 2) + pow(change_mouse_y, 2)) / 100;
+          }
+          x = dist * sin(azimuth) * cos(elevation);
+          y = dist * sin(elevation);
+          z = dist * cos(azimuth) * cos(elevation);
+      }
+      else if (isLeftDown) {
+          azimuth = (old_mouse_x+change_mouse_x)/100;
+          elevation = (old_mouse_y+ change_mouse_y)/100;
+          x = dist * sin(azimuth) * cos(elevation);
+          y = dist * sin(elevation);
+          z = dist * cos(azimuth) * cos(elevation);
+      }*/
+      
+
+      camera = glm::lookAt(glm::vec3(x, y, z), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+      glm::mat4 mvp = projection * camera * transform;
+
+      glUniformMatrix4fv(matrixParam, 1, GL_FALSE, &mvp[0][0]);
 
       // Draw primitive
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
