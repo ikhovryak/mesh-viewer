@@ -249,6 +249,7 @@ int main(int argc, char** argv)
    glGetShaderiv(vshaderId, GL_COMPILE_STATUS, &result);
    if (result == GL_FALSE)
    {
+      
       PrintShaderErrors(vshaderId, "Vertex shader");
       return -1;
    }
