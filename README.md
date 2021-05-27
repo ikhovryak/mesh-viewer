@@ -2,6 +2,15 @@
 
 OPenGL applications for viewing meshes
 
+## Simple-Mesh Demo
+Features implemented:
+- Dragging with the left mouse button down rotates the camera around the origin 
+- SHIFT+Drag with the left mouse button down moves the camera towards and away from the origin
+- Mesh class that loads PLY files
+
+![Demo](demo.gif)
+
+
 ## How to build
 
 *Windows*
@@ -39,5 +48,4 @@ To run each program from build, you would type
 mesh-viewer/build $ ../bin/mesh-viewer
 ```
 
-# TODO: Screenshots and writeup
 
